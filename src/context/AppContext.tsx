@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Product, Sale, User, KardexEntry, CashSession, Alert, UserRole } from '../types';
+import { Sale, User, KardexEntry, CashSession, Alert, UserRole } from '../types';
+import { useProducts } from '../hooks/useProducts';
 
 interface AppState {
-  products: Product[];
   sales: Sale[];
   users: User[];
   kardexEntries: KardexEntry[];
@@ -10,18 +10,17 @@ interface AppState {
   alerts: Alert[];
   currentUser: User | null;
   currentCashSession: CashSession | null;
+  // Products ahora se manejan por separado con el hook
 }
 
 type AppAction =
-  | { type: 'ADD_PRODUCT'; payload: Product }
-  | { type: 'UPDATE_PRODUCT'; payload: Product }
-  | { type: 'DELETE_PRODUCT'; payload: string }
   | { type: 'ADD_SALE'; payload: Sale }
   | { type: 'ADD_KARDEX_ENTRY'; payload: KardexEntry }
   | { type: 'LOGIN'; payload: User }
   | { type: 'LOGOUT' }
   | { type: 'START_CASH_SESSION'; payload: CashSession }
   | { type: 'END_CASH_SESSION' }
+  | { type: 'ADD_CASH_SESSION_HISTORY'; payload: CashSession }
   | { type: 'ADD_ALERT'; payload: Alert }
   | { type: 'MARK_ALERT_READ'; payload: string }
   | { type: 'LOAD_DATA'; payload: Partial<AppState> };
@@ -29,10 +28,18 @@ type AppAction =
 const AppContext = createContext<{
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
+  products: {
+    data: any[];
+    loading: boolean;
+    error: string | null;
+    addProduct: (product: any) => Promise<any>;
+    updateProduct: (product: any) => Promise<any>;
+    deleteProduct: (id: string) => Promise<void>;
+    refetch: () => Promise<void>;
+  };
 } | null>(null);
 
 const initialState: AppState = {
-  products: [],
   sales: [],
   users: [],
   kardexEntries: [],
@@ -72,21 +79,6 @@ const defaultUsers: User[] = [
 
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
-    case 'ADD_PRODUCT':
-      return { ...state, products: [...state.products, action.payload] };
-    
-    case 'UPDATE_PRODUCT':
-      return {
-        ...state,
-        products: state.products.map(p => p.id === action.payload.id ? action.payload : p),
-      };
-    
-    case 'DELETE_PRODUCT':
-      return {
-        ...state,
-        products: state.products.filter(p => p.id !== action.payload),
-      };
-    
     case 'ADD_SALE':
       return { ...state, sales: [...state.sales, action.payload] };
     
@@ -117,6 +109,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
           state.cashSessions,
       };
     
+    case 'ADD_CASH_SESSION_HISTORY':
+      return {
+        ...state,
+        cashSessions: state.cashSessions.map(s => 
+          s.id === action.payload.id ? action.payload : s
+        ),
+      };
+    
     case 'ADD_ALERT':
       return { ...state, alerts: [...state.alerts, action.payload] };
     
@@ -136,6 +136,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const productsHook = useProducts();
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -150,19 +151,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Save data to localStorage on state changes
   useEffect(() => {
-    if (state.products.length > 0 || state.sales.length > 0) {
+    if (state.sales.length > 0) {
       localStorage.setItem('inventorySystem', JSON.stringify({
-        products: state.products,
         sales: state.sales,
         kardexEntries: state.kardexEntries,
         cashSessions: state.cashSessions,
         alerts: state.alerts,
       }));
     }
-  }, [state.products, state.sales, state.kardexEntries, state.cashSessions, state.alerts]);
+  }, [state.sales, state.kardexEntries, state.cashSessions, state.alerts]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ 
+      state, 
+      dispatch,
+      products: {
+        data: productsHook.products,
+        loading: productsHook.loading,
+        error: productsHook.error,
+        addProduct: productsHook.addProduct,
+        updateProduct: productsHook.updateProduct,
+        deleteProduct: productsHook.deleteProduct,
+        refetch: productsHook.refetch,
+      }
+    }}>
       {children}
     </AppContext.Provider>
   );

@@ -110,8 +110,8 @@ export function InvoiceModal({ open, onClose, sale, type, setType }: any) {
 }
 
 export function PointOfSale() {
-  const { state, dispatch } = useApp();
-  const { products, currentUser, currentCashSession } = state;
+  const { state, dispatch, products } = useApp();
+  const { currentUser, currentCashSession } = state;
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -129,7 +129,7 @@ export function PointOfSale() {
     return () => window.removeEventListener('openInvoiceModal', handler);
   }, []);
 
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = products.data.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -182,7 +182,7 @@ export function PointOfSale() {
     }
 
     const item = cart.find(i => i.id === itemId);
-    const product = products.find(p => p.id === item?.productId);
+    const product = products.data.find(p => p.id === item?.productId);
     
     if (product && newQuantity > product.currentStock) {
       alert('No hay suficiente stock disponible');
@@ -256,14 +256,14 @@ export function PointOfSale() {
 
     // Actualiza stock y kardex
     cart.forEach(item => {
-      const product = products.find(p => p.id === item.productId);
+      const product = products.data.find(p => p.id === item.productId);
       if (product) {
         const updatedProduct = {
           ...product,
           currentStock: product.currentStock - item.quantity,
           updatedAt: new Date().toISOString(),
         };
-        dispatch({ type: 'UPDATE_PRODUCT', payload: updatedProduct });
+        products.updateProduct(updatedProduct);
 
         dispatch({
           type: 'ADD_KARDEX_ENTRY',
@@ -443,7 +443,7 @@ export function PointOfSale() {
           {/* Cart Items */}
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {cart.map(item => {
-              const product = products.find(p => p.id === item.productId);
+              const product = products.data.find(p => p.id === item.productId);
               return (
                 <div key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   {product?.imageUrl ? (

@@ -10,8 +10,7 @@ interface BarcodeScannerProps {
 }
 
 export function BarcodeScanner({ onClose, onProductFound }: BarcodeScannerProps) {
-  const { state } = useApp();
-  const { products } = state;
+  const { products } = useApp();
   const [manualCode, setManualCode] = useState('');
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
@@ -142,7 +141,7 @@ export function BarcodeScanner({ onClose, onProductFound }: BarcodeScannerProps)
     
     if (!cleanedCode) return;
     
-    const product = products.find(p => p.code === cleanedCode);
+    const product = products.data.find(p => p.code === cleanedCode);
     if (product) {
       stopScanner();
       onProductFound(product);
@@ -354,16 +353,16 @@ export function BarcodeScanner({ onClose, onProductFound }: BarcodeScannerProps)
 
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-sm text-gray-600">
-                <strong>Productos registrados:</strong> {products.length}
+                <strong>Productos registrados:</strong> {products.data.length}
               </p>
               <div className="mt-2 max-h-32 overflow-y-auto">
-                {products.slice(0, 5).map(product => (
+                {products.data.slice(0, 5).map(product => (
                   <div key={product.id} className="text-xs text-gray-500 py-1">
                     {product.code} - {product.name}
                   </div>
                 ))}
-                {products.length > 5 && (
-                  <div className="text-xs text-gray-400">Y {products.length - 5} más...</div>
+                {products.data.length > 5 && (
+                  <div className="text-xs text-gray-400">Y {products.data.length - 5} más...</div>
                 )}
               </div>
             </div>

@@ -15,8 +15,8 @@ import {
 import { TrendingUp,BarChart3, TrendingDown, DollarSign, ShoppingCart, Calendar } from 'lucide-react';
 
 export function SalesReports() {
-  const { state } = useApp();
-  const { sales, products } = state;
+  const { state, products } = useApp();
+  const { sales } = state;
   const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 7));
 
@@ -27,7 +27,7 @@ export function SalesReports() {
     
     filteredSales.forEach(sale => {
       sale.items.forEach(item => {
-        const product = products.find(p => p.id === item.productId);
+        const product = products.data.find(p => p.id === item.productId);
         const name = item.name ?? item.productName ?? product?.name ?? 'Producto';
         const price = item.price ?? item.unitPrice ?? product?.salePrice ?? 0;
         const existing = productSales.get(item.productId) || { 
@@ -68,7 +68,7 @@ export function SalesReports() {
       chartData,
       sales: filteredSales,
     };
-  }, [sales, period, selectedDate, products]);
+  }, [sales, period, selectedDate, products.data]);
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 

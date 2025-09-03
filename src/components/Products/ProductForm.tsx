@@ -9,7 +9,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onClose }: ProductFormProps) {
-  const { dispatch } = useApp();
+  const { products } = useApp();
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -27,6 +27,7 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
 
   const [profitPercentage, setProfitPercentage] = useState(0);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -60,7 +61,7 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
     }
   }, [formData.costPrice, formData.salePrice]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const cost = parseFloat(formData.costPrice);
@@ -71,32 +72,40 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
       return;
     }
 
-    const productData: Product = {
-      id: product?.id || Date.now().toString(),
-      code: formData.code,
-      name: formData.name,
-      description: formData.description,
-      category: formData.category,
-      brand: formData.brand,
-      costPrice: cost,
-      salePrice: sale,
-      profitPercentage,
-      currentStock: parseInt(formData.currentStock),
-      minStock: parseInt(formData.minStock),
-      maxStock: parseInt(formData.maxStock),
-      expirationDate: formData.expirationDate || undefined,
-      imageUrl: formData.imageUrl || undefined, // Incluir la URL de la imagen
-      createdAt: product?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    setSaving(true);
 
-    if (product) {
-      dispatch({ type: 'UPDATE_PRODUCT', payload: productData });
-    } else {
-      dispatch({ type: 'ADD_PRODUCT', payload: productData });
+    try {
+      const productData: Product = {
+        id: product?.id || Date.now().toString(),
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        brand: formData.brand,
+        costPrice: cost,
+        salePrice: sale,
+        profitPercentage,
+        currentStock: parseInt(formData.currentStock),
+        minStock: parseInt(formData.minStock),
+        maxStock: parseInt(formData.maxStock),
+        expirationDate: formData.expirationDate || undefined,
+        imageUrl: formData.imageUrl || undefined, // Incluir la URL de la imagen
+        createdAt: product?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (product) {
+        await products.updateProduct(productData);
+      } else {
+        await products.addProduct(productData);
+      }
+
+      onClose();
+    } catch (error) {
+      alert('Error al guardar el producto');
+    } finally {
+      setSaving(false);
     }
-
-    onClose();
   };
 
   const calculateSalePrice = () => {
@@ -367,10 +376,13 @@ export function ProductForm({ product, onClose }: ProductFormProps) {
             </button>
             <button
               type="submit"
-              className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={saving}
+              className="flex items-center space-x-2 bg-blue-600 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Save className="h-4 w-4" />
-              <span>{product ? 'Actualizar' : 'Guardar'} Producto</span>
+              <span>
+                {saving ? 'Guardando...' : (product ? 'Actualizar' : 'Guardar')} Producto
+              </span>
             </button>
           </div>
         </form>

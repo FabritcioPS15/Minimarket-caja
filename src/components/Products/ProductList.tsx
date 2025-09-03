@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 
 export function ProductList() {
-  const { state, dispatch } = useApp();
-  const { products, currentUser } = state;
+  const { state, products } = useApp();
+  const { currentUser } = state;
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [showScanner, setShowScanner] = useState(false);
@@ -26,9 +26,9 @@ export function ProductList() {
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'normal' | 'high'>('all');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const categories = [...new Set(products.map(p => p.category))];
+  const categories = [...new Set(products.data.map(p => p.category))];
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = products.data.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.brand.toLowerCase().includes(searchTerm.toLowerCase());
@@ -48,9 +48,13 @@ export function ProductList() {
     setShowForm(true);
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = async (productId: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-      dispatch({ type: 'DELETE_PRODUCT', payload: productId });
+      try {
+        await products.deleteProduct(productId);
+      } catch (error) {
+        alert('Error al eliminar el producto');
+      }
     }
   };
 
@@ -102,6 +106,37 @@ export function ProductList() {
   }
 
   const canEditProducts = currentUser?.role === 'admin' || currentUser?.role === 'supervisor';
+
+  // Mostrar loading
+  if (products.loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Cargando productos...</span>
+      </div>
+    );
+  }
+
+  // Mostrar error
+  if (products.error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">Error al cargar productos</h3>
+            <p className="text-sm text-red-700">{products.error}</p>
+            <button
+              onClick={products.refetch}
+              className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

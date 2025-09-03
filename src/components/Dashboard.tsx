@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 
 export function Dashboard() {
-  const { state } = useApp();
-  const { products, sales, alerts, currentUser, currentCashSession } = state;
+  const { state, products } = useApp();
+  const { sales, alerts, currentUser, currentCashSession } = state;
 
-  const totalProducts = products.length;
-  const lowStockProducts = products.filter(p => p.currentStock <= p.minStock).length;
+  const totalProducts = products.data.length;
+  const lowStockProducts = products.data.filter(p => p.currentStock <= p.minStock).length;
   const todaysSales = sales.filter(sale => {
     const today = new Date().toDateString();
     return new Date(sale.createdAt).toDateString() === today;
@@ -24,7 +24,7 @@ export function Dashboard() {
   const todaysRevenue = todaysSales.reduce((total, sale) => total + sale.total, 0);
 
   // Generar alertas adicionales
-  const lowStockAlerts = products
+  const lowStockAlerts = products.data
     .filter(p => p.currentStock <= p.minStock)
     .map(p => ({
       id: `lowstock-${p.id}`,
@@ -36,7 +36,7 @@ export function Dashboard() {
       type: 'lowstock'
     }));
 
-  const expiringSoonAlerts = products
+  const expiringSoonAlerts = products.data
     .filter(p => {
       if (!p.expirationDate) return false;
       const expirationDate = new Date(p.expirationDate);
@@ -101,6 +101,37 @@ export function Dashboard() {
       bgColor: 'bg-orange-50'
     },
   ];
+
+  // Mostrar loading si los productos están cargando
+  if (products.loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Cargando productos...</span>
+      </div>
+    );
+  }
+
+  // Mostrar error si hay problemas con los productos
+  if (products.error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">Error al cargar productos</h3>
+            <p className="text-sm text-red-700">{products.error}</p>
+            <button
+              onClick={products.refetch}
+              className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
