@@ -8,12 +8,12 @@ import {
 } from 'lucide-react';
 
 export function InventoryReports() {
-  const { state } = useApp();
-  const { products, alerts } = state;
+  const { state, products } = useApp();
+  const { alerts } = state;
 
-  const lowStockProducts = products.filter(p => p.currentStock <= p.minStock);
-  const overStockProducts = products.filter(p => p.currentStock >= p.maxStock);
-  const expiringSoonProducts = products.filter(p => {
+  const lowStockProducts = products.data.filter(p => p.currentStock <= p.minStock);
+  const overStockProducts = products.data.filter(p => p.currentStock >= p.maxStock);
+  const expiringSoonProducts = products.data.filter(p => {
     if (!p.expirationDate) return false;
     const expirationDate = new Date(p.expirationDate);
     const thirtyDaysFromNow = new Date();
@@ -21,17 +21,17 @@ export function InventoryReports() {
     return expirationDate <= thirtyDaysFromNow;
   });
 
-  const totalInventoryValue = products.reduce((sum, product) => 
+  const totalInventoryValue = products.data.reduce((sum, product) => 
     sum + (product.currentStock * product.costPrice), 0
   );
 
-  const potentialRevenue = products.reduce((sum, product) => 
+  const potentialRevenue = products.data.reduce((sum, product) => 
     sum + (product.currentStock * product.salePrice), 0
   );
 
-  const categories = [...new Set(products.map(p => p.category))];
+  const categories = [...new Set(products.data.map(p => p.category))];
   const categoryData = categories.map(category => {
-    const categoryProducts = products.filter(p => p.category === category);
+    const categoryProducts = products.data.filter(p => p.category === category);
     return {
       category,
       products: categoryProducts.length,

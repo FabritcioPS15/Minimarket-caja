@@ -12,8 +12,8 @@ import {
 import { TrendingUp, DollarSign, Percent, Calculator } from 'lucide-react';
 
 export function ProfitAnalysis() {
-  const { state } = useApp();
-  const { sales, products } = state;
+  const { state, products } = useApp();
+  const { sales } = state;
   const [period, setPeriod] = useState<'weekly' | 'monthly' | 'quarterly'>('monthly');
 
   const profitData = useMemo(() => {
@@ -30,7 +30,7 @@ export function ProfitAnalysis() {
 
     sales.forEach(sale => {
       sale.items.forEach(item => {
-        const product = products.find(p => p.id === item.productId);
+        const product = products.data.find(p => p.id === item.productId);
         if (product) {
         const price = item.price ?? item.unitPrice ?? product.salePrice ?? 0;
         const name = item.name ?? item.productName ?? product.name ?? 'Producto';
@@ -78,7 +78,7 @@ export function ProfitAnalysis() {
       }
 
       const saleProfit = sale.items.reduce((sum, item) => {
-        const product = products.find(p => p.id === item.productId);
+        const product = products.data.find(p => p.id === item.productId);
         return sum + (product ? ((item.price ?? item.unitPrice ?? product.salePrice ?? 0) - product.costPrice) * item.quantity : 0);
       }, 0);
 
@@ -95,7 +95,7 @@ export function ProfitAnalysis() {
     const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
     const totalCost = sales.reduce((sum, sale) => 
       sum + sale.items.reduce((itemSum, item) => {
-        const product = products.find(p => p.id === item.productId);
+        const product = products.data.find(p => p.id === item.productId);
         return itemSum + (product ? product.costPrice * item.quantity : 0);
       }, 0), 0
     );
@@ -111,7 +111,7 @@ export function ProfitAnalysis() {
         .map(([period, profit]) => ({ period, profit }))
         .sort((a, b) => a.period.localeCompare(b.period)),
     };
-  }, [sales, products, period]);
+  }, [sales, products.data, period]);
 
   return (
     <div className="space-y-6">
@@ -312,7 +312,7 @@ export function ProfitAnalysis() {
                 </tr>
               ))}
               {/* Mostrar productos sin ventas */}
-              {products.filter(p => !profitData.topProducts.some(tp => tp.id === p.id)).map(p => (
+              {products.data.filter(p => !profitData.topProducts.some(tp => tp.id === p.id)).map(p => (
                 <tr key={p.id} className="hover:bg-gray-50 bg-gray-100">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-400">{p.name}</div>

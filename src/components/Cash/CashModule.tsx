@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export function CashModule() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, products } = useApp();
   const { currentUser, currentCashSession, cashSessions, sales } = state;
   const [startAmount, setStartAmount] = useState('');
   const [showOpenDialog, setShowOpenDialog] = useState(false);
@@ -288,7 +288,7 @@ export function CashModule() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Efectivo Inicial</p>
-                <p className="text-2xl font-bold text-gray-900">S/ {currentCashSession.startAmount.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-gray-900">{products.data.length}</p>
               </div>
               <DollarSign className="h-8 w-8 text-blue-600" />
             </div>
